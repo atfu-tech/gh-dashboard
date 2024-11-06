@@ -20,8 +20,16 @@ For users accustomed to Bitbucket or GitLab, which offer more consolidated views
 
 ## Usage
 
+### Recommended
+
+**Do not provide any credentials to unknowm (not verified/reviewed) applications/websites**
+
+1. Clone repository or download `index.html`
+2. Review code
+3. Navigate in browser to the file
+
+### Feeling lucky
 - via Github Pages - visit [gh-dashboard](https://atfu-tech.github.io/gh-dashboard/) to get started
-- locally - clone the repo or download `index.html` and navigate to it in your browser
 
 ## Configuration
 

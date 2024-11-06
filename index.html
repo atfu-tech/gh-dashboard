@@ -176,8 +176,18 @@
                         getPullRequestsAlreadyReviewed(),
                         getMyPullRequests()
                     ]);
+                    let prsReview = [];
+                    for (let pr of prsToReview) {
+                        prsReview.push(pr);
+                    }
+                    for (let pr of prsReviewed) {
+                        if (prsReview.find(p => p.url === pr.url)) {
+                            continue;
+                        }
+                        prsReview.push(pr);
+                    }
                     let html = ejs.render(document.getElementById('template').innerHTML, {
-                        prsReview: prsToReview.concat(prsReviewed),
+                        prsReview: prsReview,
                         myPrs: myPrs
                     });
                     document.getElementById('content').innerHTML = html;

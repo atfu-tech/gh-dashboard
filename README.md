@@ -30,3 +30,4 @@ This dashboard is provided as-is, without any warranty or support. Code is utter
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+Icon from the Mechanic Elements 9 collection under CC0.

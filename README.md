@@ -9,13 +9,13 @@ Any issues, ideas or anything else? gh-dashboard is open source!
 ## Usage
 
 - via Github Pages - visit [gh-dashboard](https://atfu-tech.github.io/gh-dashboard/) to get started
-- locally - clone the repo or download `index.html` and navigate to it in your browser 
+- locally - clone the repo or download `index.html` and navigate to it in your browser
 
 ## Configuration
 
 To retrieve information from GitHub, this dashboard requires a Personal Access Token (PAT). You can generate one here with read-only permissions for user and repository data.
 
-This dashboard operates entirely on the client side, meaning your GitHub token is stored in your browser's local storage only - it leaves your browser only to interact with GitHub.
+This dashboard operates entirely on the client side, meaning your GitHub token is stored in your browser's local storage only.
 
 ## To Do/Consider
 

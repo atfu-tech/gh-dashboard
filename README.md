@@ -6,6 +6,18 @@ gh-dashboard is meant to be a dead-simple, client-side summary of your current G
 
 Any issues, ideas or anything else? gh-dashboard is open source!
 
+## Why
+
+GitHub (both website or cli) allows you to:
+
+ - view your own pull requests (https://github.com/pulls)
+ - requests for review (https://github.com/pulls/review-requested).
+
+However, viewing the full set of open pull requests that have been reviewed (whether by user or team) requires a custom filter, additional tab and a couple extra clicks, disrupting the workflow.
+
+For users accustomed to Bitbucket or GitLab, which offer more consolidated views of pull requests, gh-dashboard feels familiar.
+
+
 ## Usage
 
 - via Github Pages - visit [gh-dashboard](https://atfu-tech.github.io/gh-dashboard/) to get started
@@ -20,6 +32,7 @@ This dashboard operates entirely on the client side, meaning your GitHub token i
 ## To Do/Consider
 
 - deployments' review
+- build status, comments counter, reactions
 - show only X items in list (`show more` link)
 - drop esm.sh (use pure js w/o dependencies)
 

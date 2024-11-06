@@ -1,0 +1,245 @@
+<html>
+    <head>
+        <title>gh-dashboard</title>
+        <style>
+            /* RESET */
+            *, *::before, *::after { box-sizing: border-box; }
+            html { -moz-text-size-adjust: none; -webkit-text-size-adjust: none; text-size-adjust: none; }
+            body, h1, h2, p { margin-block-end: 0; }
+            ul[role='list'], ol[role='list'] { list-style: none; }
+            body { min-height: 100vh; line-height: 1.5; font-family: Verdana, Monaco, sans-serif; }
+            img { max-width: 100%; display: block; }
+        </style>
+        <style>
+            /* common */
+            a { text-decoration: none; cursor: pointer; }
+            a:hover { text-decoration: underline; }
+            h1 { font-size: 1.5em; text-align: center; letter-spacing: 1.3px; color: rgba(0, 0, 0, 0.5); margin: 3em auto 2em auto; }
+            h2 { margin: 1em 0; font-size: 1.1em; padding-bottom: 0.5em; border-bottom: 1px dotted rgba(0, 0, 0, 0.5); }
+            footer { text-align: center; margin: 2em 0; color: gray; font-size: 0.8em; }
+            footer a { text-decoration: underline; cursor: pointer; }
+            div#content { width: 80%; margin: 1em auto; }
+            /* setup */
+            div#setup { display: none; justify-content: center; align-items: center; height: 100vh; }
+            div#setup > div { width: 50%; }
+            div#setup #error { color: red; font-weight: bold; background-color: lightpink; padding: 1em; border: 1px solid red; display: none; }
+            /* template */
+            section .title .number { color: black; }
+            section ul { margin: 0 auto; padding: 0; }
+            section li { margin: 0.5em 0; padding: 0.5em 1em; border: 1px solid #f0f0f0; display: flex; align-items: center; cursor: pointer; gap: 10px; }
+            section li:hover { background-color: #f2f2f2; }
+            section li p, section li div { padding: 0; margin: 0; }
+            section div.item { flex-grow: 1; }
+            section p.info { font-size: 0.8em; color: gray; }
+            section p.info a { color: black; }
+            section .item-user-icon { padding: 0 0.1em; margin-right: 0.5em; }
+            section .item-user-icon img { object-fit: cover; }
+            section .update-time { font-size: 0.8em; color: gray; }
+            /* logout */
+            #logout { position: absolute; top: 1em; right: 1em; cursor: pointer; }
+        </style>
+        <style>
+            /* loader */
+            @keyframes rotate {
+                0% { transform: rotate(0deg); }
+                50% { transform: rotate(180deg); }
+                100% { transform: rotate(360deg); }
+            }
+
+            @keyframes rotate2 {
+                0% { transform: rotate(0deg); border-top-color: rgba(0, 0, 0, 0.5); }
+                50% { transform: rotate(180deg); border-top-color: rgba(0, 0, 255, 0.5); }
+                100% { transform: rotate(360deg); border-top-color: rgba(0, 0, 0, 0.5); }
+            }
+            body { padding-bottom: 100px; }
+            .loader { position: relative; margin: 75px auto; width: 150px; height: 150px; display: block; overflow: hidden; }
+            .loader div { height: 100%; }
+            /* loader 1 */
+            .loader1, .loader1 div {
+                border-radius: 50%;
+                padding: 8px;
+                border: 2px solid transparent;
+                animation: rotate linear 3.5s infinite;
+                border-top-color: rgba(0, 0, 0, 0.5);
+                border-bottom-color: rgba(0, 0, 255, 0.5);
+            }
+            div:hover { animation-play-state: paused; }
+            .loader, .loader * { will-change: transform; }
+        </style>
+        <script type="module">
+            import { Octokit } from "https://esm.sh/octokit";
+            import ejs from "https://esm.sh/ejs";
+
+            const octokit = new Octokit({
+                auth: localStorage.getItem('GITHUB_TOKEN'),
+            });
+
+            function timeSince(date) {
+                let seconds = Math.floor((new Date() - date) / 1000);
+                let interval = seconds / 31536000;
+                if (interval > 1) {
+                    return Math.floor(interval) + " years";
+                }
+                interval = seconds / 2592000;
+                if (interval > 1) {
+                    return Math.floor(interval) + " months";
+                }
+                interval = seconds / 86400;
+                if (interval > 1) {
+                    return Math.floor(interval) + " days";
+                }
+                interval = seconds / 3600;
+                if (interval > 1) {
+                    return Math.floor(interval) + " hours";
+                }
+                interval = seconds / 60;
+                if (interval > 1) {
+                    return Math.floor(interval) + " minutes";
+                }
+                return Math.floor(seconds) + " seconds";
+            }
+
+            async function getMe() {
+                const response = await octokit.rest.users.getAuthenticated();
+                return response.data;
+            }
+
+            async function getPullRequestsToReview(username) {
+                const items = await _getPullRequests(`is:pr+state:open+review-requested:${username}`);
+                return items;
+            }
+
+            async function getMyPullRequests(username) {
+                const items = await _getPullRequests(`is:pr+state:open+author:${username}`);
+                return items;
+            }
+
+            async function _getPullRequests(query) {
+                const response = await octokit.rest.search.issuesAndPullRequests({
+                    q: query
+                });
+                for (let pr of response.data.items) {
+                    pr.repository_url = pr.repository_url.split('/').slice(-2).join('/');
+                    pr.org = pr.repository_url.split('/')[0];
+                    pr.repo_name = pr.repository_url.split('/')[1];
+                    pr.updated_ago = timeSince(new Date(pr.updated_at));
+                }
+                return response.data.items;
+            }
+
+            async function main() {
+                let token = localStorage.getItem('GITHUB_TOKEN');
+                if (!token) {
+                    document.getElementById('setup').style.display = 'flex';
+                    document.getElementById('loader').style.display = 'none';
+                    document.getElementById('logout').style.display = 'none';
+                    return;
+                }
+                try {
+                    let me = await getMe();
+                    let prToReview = await getPullRequestsToReview(me.login);
+                    let myPrs = await getMyPullRequests(me.login);
+                    let html = ejs.render(document.getElementById('template').innerHTML, {
+                        me: me,
+                        prsToReview: prToReview,
+                        myPrs: myPrs
+                    });
+                    document.getElementById('content').innerHTML = html;
+                } catch (error) {
+                    document.getElementById('setup').style.display = 'flex';
+                    document.getElementById('logout').style.display = 'none';
+                    document.getElementById('loader').style.display = 'none';
+                    document.getElementById('error').innerHTML = error.toString();
+                    document.getElementById('error').style.display = 'block';
+                }
+            }
+            main();
+        </script>
+        <script language="javascript">
+            function saveToken() {
+                localStorage.setItem('GITHUB_TOKEN', document.getElementById('github-token').value);
+                window.location.reload();
+            }
+
+            function clearToken() {
+                localStorage.removeItem('GITHUB_TOKEN');
+                window.location.reload();
+            }
+        </script>
+    </head>
+    <body>
+        <button id="logout" onclick="clearToken();">logout</button>
+        <div id="content">
+            <div id="loader" class="loader loader1">
+                <div><div><div><div><div><div></div></div></div></div></div></div>
+            </div>
+            <div id="setup">
+                <div>
+                    <h1>gh-dashboard</h1>
+                    <p id="error"></p>
+                    <h2>About</h2>
+                    <p><strong>gh-dashboard</strong> is meant to be a dead-simple, client-side summary of your current GitHub work. It provides a convenient view of pull requests, including those you've created and those you're reviewing (more to come).</p>
+                    <p>Any issues, ideas or anything else? <a target="_blank" href="https://github.com/atfu-tech/gh-dashboard">gh-dashboard</a> is open source!</p>
+                    <h2>Disclaimer</h2>
+                    <p>This dashboard is provided as-is, without any warranty or support. Code is utterly ugly and available <a target="_blank" href="https://github.com/atfu-tech/gh-dashboard">here</a> and/or with Ctrl+U.</p>
+                    <h2>Configuration</h2>
+                    <p>To retrieve information from GitHub, this dashboard requires a Personal Access Token (PAT). You can generate one <a target="_blank" class="setup-link" href="https://github.com/settings/personal-access-tokens/new?scopes=repo,user&description=gh-dashboard">here</a> with read-only permissions for user and repository data.</p>
+                    <p>This dashboard operates entirely on the client side, meaning your GitHub token is stored in your browser's local storage only - it leaves your browser only to interact with GitHub.</p>
+                    <form id="setup-form">
+                        <p>Enter your Github PAT to get started.</p>
+                        <input type="password" id="github-token" placeholder="github_pat_..." />
+                        <button onclick="saveToken();">Save</button>
+                    </form>
+                </div>  
+            </div>
+        </div>
+        <script id="template" type="text/template">
+            <h1><%= me.login %>'s Dashboard</h1>
+            <section id="prsToReview">
+                <h2>Pull requests to review (<%= prsToReview.length %>)</h2>
+                <% if (prsToReview.length === 0) { %>
+                    <p>No pull requests to review.</p>
+                <% } else { %>
+                <ul role="list">
+                    <% prsToReview.forEach(function(pr) { %>
+                        <li>
+                            <div class="item-user-icon">
+                                <img width="32" height="32" src="<%= pr.user.avatar_url %>" alt="<%= pr.user.login %> avatar" />
+                            </div>
+                            <div class="item">
+                                <p class="title"><span class=number>#<%= pr.number %></span> <a target="_blank" class="pr" href="<%= pr.html_url %>"><%= pr.title %></a></p>
+                                <p class="info">by <a target="_blank" href="<%= pr.user.html_url %>"class=author><%= pr.user.login %></a> in <a target="_blank" class=repo>  <%= pr.org %>/<%= pr.repo_name %></a></p>
+                            </div>
+                            <div class="update-time"><%= pr.updated_ago %></div>
+                        </li>
+                    <% }); %>
+                </ul>
+                <% } %>
+            </section>
+            <section id="myPrs">
+                <h2>My pull requests (<%= myPrs.length %>)</h2>
+                <% if (myPrs.length === 0) { %>
+                    <p>No pull requests created.</p>
+                <% } else { %>
+                <ul>
+                    <% myPrs.forEach(function(pr) { %>
+                        <li>
+                            <div class="item-user-icon">
+                                <img width="32" height="32" src="<%= pr.user.avatar_url %>" alt="<%= pr.user.login %> avatar" />
+                            </div>
+                            <div class="item">
+                                <p class="title"><span class=number>#<%= pr.number %></span> <a target="_blank" class="pr" href="<%= pr.html_url %>"><%= pr.title %></a></p>
+                                <p class="info">by <a target="_blank" href="<%= pr.user.html_url %>" class=author><%= pr.user.login %></a> in <a target="_blank" class=repo>  <%= pr.org %>/<%= pr.repo_name %></a></p>
+                            </div>
+                            <div class="update-time"><%= pr.updated_ago %></div>
+                        </li>
+                    <% }); %>
+                </ul>   
+                <% } %>
+            </section>
+        </script>
+        <footer>
+            <p>by <a target="_blank" href="https://github.com/atfu-tech/gh-dashboard">gh-dashboard</a></p>
+        </footer>
+    </body>
+</html>

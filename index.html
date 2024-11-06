@@ -138,11 +138,13 @@
                 }
                 try {
                     let me = await getMe();
-                    let prToReview = await getPullRequestsToReview(me.login);
-                    let myPrs = await getMyPullRequests(me.login);
+                    let [prsToReview, myPrs] = await Promise.all([
+                        getPullRequestsToReview(me.login),
+                        getMyPullRequests(me.login)
+                    ]);
                     let html = ejs.render(document.getElementById('template').innerHTML, {
                         me: me,
-                        prsToReview: prToReview,
+                        prsToReview: prsToReview,
                         myPrs: myPrs
                     });
                     document.getElementById('content').innerHTML = html;

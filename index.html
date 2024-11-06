@@ -69,12 +69,9 @@
             .loader, .loader * { will-change: transform; }
         </style>
         <script type="module">
-            import { Octokit } from "https://esm.sh/octokit";
             import ejs from "https://esm.sh/ejs";
 
-            const octokit = new Octokit({
-                auth: localStorage.getItem('GITHUB_TOKEN'),
-            });
+            const CACHE_VALIDITY_SECONDS = 60;
 
             function timeSince(date) {
                 let seconds = Math.floor((new Date() - date) / 1000);
@@ -101,39 +98,68 @@
                 return Math.floor(seconds) + " seconds";
             }
 
-            async function getMe() {
-                const response = await octokit.rest.users.getAuthenticated();
-                return response.data;
-            }
-
-            async function getPullRequestsToReview(username) {
-                const items = await _getPullRequests(`is:pr state:open review-requested:${username}`);
+            async function getPullRequestsToReview() {
+                const items = await _getPullRequests(`is:pr state:open review-requested:@me`);
                 return items;
             }
-            async function getPullRequestsAlreadyReviewed(username) {
-                const items = await _getPullRequests(`is:pr state:open reviewed-by:${username}`);
+            async function getPullRequestsAlreadyReviewed() {
+                const items = await _getPullRequests(`is:pr state:open reviewed-by:@me`);
                 for (let pr of items) {
                     pr.reviewed = true;
                 }
                 return items;
             }
 
-            async function getMyPullRequests(username) {
-                const items = await _getPullRequests(`is:pr+state:open+author:${username}`);
+            async function getMyPullRequests() {
+                const items = await _getPullRequests(`is:pr state:open author:@me`);
                 return items;
+            }
+         
+            function writeToCache(key, data) {
+                try {
+                    localStorage.setItem('cache-' + key, JSON.stringify({ data: data, timestamp: new Date() }));
+                } catch (error) {
+                    console.error('Error writing to cache:', error);
+                }
+            }
+         
+            function readFromCache(key) {
+                let raw = localStorage.getItem('cache-' + key);
+                if (raw) {
+                    let entry = JSON.parse(raw);
+                    if (new Date() - new Date(entry.timestamp) < CACHE_VALIDITY_SECONDS * 1000) {
+                        return entry.data;
+                    }
+                }
+                return null;
+            }
+
+            async function requestGithub(query) {
+                let cached = readFromCache(query);
+                if (cached) {
+                    return cached;
+                }
+                const response = await fetch('https://api.github.com/search/issues?q=' + encodeURIComponent(query), {
+                    headers: {
+                        'Accept': 'application/vnd.github+json',
+                        'Authorization': 'Bearer ' + localStorage.getItem('GITHUB_TOKEN'),
+                        'X-GitHub-Api-Version': '2022-11-28'
+                    }
+                });
+                const data = await response.json();
+                writeToCache(query, data);
+                return data;
             }
 
             async function _getPullRequests(query) {
-                const response = await octokit.rest.search.issuesAndPullRequests({
-                    q: query
-                });
-                for (let pr of response.data.items) {
+                const data = await requestGithub(query);
+                for (let pr of data.items) {
                     pr.repository_url = pr.repository_url.split('/').slice(-2).join('/');
                     pr.org = pr.repository_url.split('/')[0];
                     pr.repo_name = pr.repository_url.split('/')[1];
                     pr.updated_ago = timeSince(new Date(pr.updated_at));
                 }
-                return response.data.items;
+                return data.items;
             }
 
             async function main() {
@@ -145,18 +171,15 @@
                     return;
                 }
                 try {
-                    let me = await getMe();
                     let [prsToReview, prsReviewed, myPrs] = await Promise.all([
-                        getPullRequestsToReview(me.login),
-                        getPullRequestsAlreadyReviewed(me.login),
-                        getMyPullRequests(me.login)
+                        getPullRequestsToReview(),
+                        getPullRequestsAlreadyReviewed(),
+                        getMyPullRequests()
                     ]);
                     let html = ejs.render(document.getElementById('template').innerHTML, {
-                        me: me,
                         prsReview: prsToReview.concat(prsReviewed),
                         myPrs: myPrs
                     });
-                    console.log(prsReviewed);
                     document.getElementById('content').innerHTML = html;
                 } catch (error) {
                     document.getElementById('setup').style.display = 'flex';
@@ -207,7 +230,7 @@
             </div>
         </div>
         <script id="template" type="text/template">
-            <h1><%= me.login %>'s Dashboard</h1>
+            <h1>gh-dashboard</h1>
             <section id="prsToReview">
                 <h2>Pull requests to review (<%= prsReview.length %>)</h2>
                 <% if (prsReview.length === 0) { %>

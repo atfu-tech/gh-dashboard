@@ -35,7 +35,8 @@
             section p.info a { color: black; }
             section .item-user-icon { padding: 0 0.1em; margin-right: 0.5em; }
             section .item-user-icon img { object-fit: cover; }
-            section .update-time { font-size: 0.8em; color: gray; }
+            section .update { font-size: 0.8em; color: gray; }
+            section .marker { font-size: 0.8em; color: darkgreen; padding: 0.1em 0.5em; border:1px solid darkgreen; border-radius: 5px;}
             /* logout */
             #logout { position: absolute; top: 1em; right: 1em; cursor: pointer; }
         </style>
@@ -106,7 +107,14 @@
             }
 
             async function getPullRequestsToReview(username) {
-                const items = await _getPullRequests(`is:pr+state:open+review-requested:${username}`);
+                const items = await _getPullRequests(`is:pr state:open review-requested:${username}`);
+                return items;
+            }
+            async function getPullRequestsAlreadyReviewed(username) {
+                const items = await _getPullRequests(`is:pr state:open reviewed-by:${username}`);
+                for (let pr of items) {
+                    pr.reviewed = true;
+                }
                 return items;
             }
 
@@ -138,15 +146,17 @@
                 }
                 try {
                     let me = await getMe();
-                    let [prsToReview, myPrs] = await Promise.all([
+                    let [prsToReview, prsReviewed, myPrs] = await Promise.all([
                         getPullRequestsToReview(me.login),
+                        getPullRequestsAlreadyReviewed(me.login),
                         getMyPullRequests(me.login)
                     ]);
                     let html = ejs.render(document.getElementById('template').innerHTML, {
                         me: me,
-                        prsToReview: prsToReview,
+                        prsReview: prsToReview.concat(prsReviewed),
                         myPrs: myPrs
                     });
+                    console.log(prsReviewed);
                     document.getElementById('content').innerHTML = html;
                 } catch (error) {
                     document.getElementById('setup').style.display = 'flex';
@@ -199,12 +209,12 @@
         <script id="template" type="text/template">
             <h1><%= me.login %>'s Dashboard</h1>
             <section id="prsToReview">
-                <h2>Pull requests to review (<%= prsToReview.length %>)</h2>
-                <% if (prsToReview.length === 0) { %>
+                <h2>Pull requests to review (<%= prsReview.length %>)</h2>
+                <% if (prsReview.length === 0) { %>
                     <p>No pull requests to review.</p>
                 <% } else { %>
                 <ul role="list">
-                    <% prsToReview.forEach(function(pr) { %>
+                    <% prsReview.forEach(function(pr) { %>
                         <li>
                             <div class="item-user-icon">
                                 <img width="32" height="32" src="<%= pr.user.avatar_url %>" alt="<%= pr.user.login %> avatar" />
@@ -213,7 +223,8 @@
                                 <p class="title"><span class=number>#<%= pr.number %></span> <a target="_blank" class="pr" href="<%= pr.html_url %>"><%= pr.title %></a></p>
                                 <p class="info">by <a target="_blank" href="<%= pr.user.html_url %>"class=author><%= pr.user.login %></a> in <a target="_blank" class=repo>  <%= pr.org %>/<%= pr.repo_name %></a></p>
                             </div>
-                            <div class="update-time"><%= pr.updated_ago %></div>
+                            <% if (pr.reviewed) { %><div class="marker">reviewed</div><% }; %>
+                            <div class="update"><%= pr.updated_ago %></div>
                         </li>
                     <% }); %>
                 </ul>
@@ -234,7 +245,7 @@
                                 <p class="title"><span class=number>#<%= pr.number %></span> <a target="_blank" class="pr" href="<%= pr.html_url %>"><%= pr.title %></a></p>
                                 <p class="info">by <a target="_blank" href="<%= pr.user.html_url %>" class=author><%= pr.user.login %></a> in <a target="_blank" class=repo>  <%= pr.org %>/<%= pr.repo_name %></a></p>
                             </div>
-                            <div class="update-time"><%= pr.updated_ago %></div>
+                            <div class="update"><%= pr.updated_ago %></div>
                         </li>
                     <% }); %>
                 </ul>

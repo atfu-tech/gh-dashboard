@@ -24,7 +24,7 @@ For users accustomed to Bitbucket or GitLab, which offer more consolidated views
 
 **Do not provide any credentials to unknowm (not verified/reviewed) applications/websites**
 
-1. Clone repository or download `index.html`
+1. Clone repository
 2. Review code
 3. Navigate in browser to the file
 

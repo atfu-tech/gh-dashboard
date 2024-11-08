@@ -9,6 +9,13 @@ Versioning  X.Y.Z:
  Y - non breaking features, notable bugfixes
  Z - bugfixes, small improvments
 
+## [1.2.0] - 2024-11-08
+### Changed
+- get rid of ejs templates - no-external-deps
+- split - open pr to review and reviewed
+### Added
+- feature: by default show 5 items on each list and show all as a option
+
 ## [1.1.0] - 2024-11-06
 ### Changed
 - replace octokit with plain fetch (speed improvement)

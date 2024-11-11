@@ -130,7 +130,6 @@ DashboardUI = {
             document.getElementById('full-mode').checked = true;
         }
         document.getElementById('full-mode').onchange = function() {
-            console.log('full-mode', this.checked);
             if (this.checked) {
                 Config.modify(null, 'mode', Config.MODE_FULL);
             } else {
@@ -296,16 +295,22 @@ GithubAPI = {
         let toReviewPrsCleaned = []
         let reviewedPrsCleaned = []
         for (let pr of toReviewPrs) {
-            if (reviewedPrs.find(p => p.url === pr.url)) {
+            if (reviewedPrs.find(p => p.url === pr.url && p.number === pr.number)) {
                 reviewedPrsCleaned.push(pr)
             } else {
                 toReviewPrsCleaned.push(pr)
             }
         }
+        for (let pr of reviewedPrs) {
+            if (toReviewPrs.find(p => p.url === pr.url && p.number === pr.number)) {
+                toReviewPrsCleaned.push(pr)
+            } else {
+                reviewedPrsCleaned.push(pr)
+            }
+        }
         return [myPrs, toReviewPrsCleaned, reviewedPrsCleaned]
     },
     getDataFull: async function(org, repoFilters) {
-        console.log('getDataFull', org, repoFilters);
         let [allPrs, simpleData] = await Promise.all([GithubAPI.getAllPullRequests(org), GithubAPI.getDataSimple(org)]);
         let filteredPrs = allPrs.filter(function (pr) {
             for (let repoFilter of repoFilters.split(',')) {
@@ -319,7 +324,9 @@ GithubAPI = {
         let [myPrs, toReviewPrs, reviewedPrs] = simpleData;
 
         let possiblyToReviewPrs = filteredPrs.filter(function (pr) {
-            return !myPrs.find(p => p.url === pr.url) && !reviewedPrs.find(p => p.url === pr.url) && !toReviewPrs.find(p => p.url === pr.url);
+            return !myPrs.find(p => p.url === pr.url && p.number === pr.number) && 
+                !reviewedPrs.find(p => p.url === pr.url && p.number === pr.number) &&
+                !toReviewPrs.find(p => p.url === pr.url && p.number === pr.number);
         });
 
         return [myPrs, toReviewPrs, reviewedPrs, possiblyToReviewPrs]

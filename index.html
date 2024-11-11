@@ -7,71 +7,142 @@
         <script src="script.js"></script>
     </head>
     <body>
-        <button id="logout" onclick="clearToken();">logout</button>
+        <nav>
+            <label><input class="toggle" type="checkbox">brute</label>
+            <button id="btn-config">Config</button>
+            <button id="btn-logout">Log out</button>
+        </nav>
+        <div id="temp"></div>
         <div id="content">
             <div id="loader" class="loader loader1">
                 <div><div><div><div><div><div></div></div></div></div></div></div>
             </div>
-            <div id="setup">
+            <div id="config">
                 <div>
                     <h1>gh-dashboard</h1>
                     <p id="error"></p>
                     <h2>About</h2>
                     <p><strong>gh-dashboard</strong> is meant to be a dead-simple, client-side summary of your current GitHub work. It provides a convenient view of pull requests, including those you've created and those you're reviewing (more to come).</p>
                     <p>Any issues, ideas or anything else? <a target="_blank" href="https://github.com/atfu-tech/gh-dashboard">gh-dashboard</a> is open source!</p>
-                    <h2>Disclaimer</h2>
-                    <p>This dashboard is provided as-is, without any warranty or support. Feel free to verify and review before providing any credentials. Code is utterly ugly and available <a target="_blank" href="https://github.com/atfu-tech/gh-dashboard">here</a> and/or with Ctrl+U.</p>
                     <h2>Configuration</h2>
                     <p>To retrieve information from GitHub, this dashboard requires a Personal Access Token (PAT). You can generate one <a target=":blank" class="setup-link" href="https://github.com/settings/personal-access-tokens/new?scopes=repo,user&description=gh-dashboard">here</a> with read-only permissions for repository data.</p>
                     <p>This dashboard operates entirely on the client side, meaning your GitHub token is stored in your browser's local storage only.</p>
-                    <form id="setup-form">
-                        <p>Enter your Github PAT to get started.</p>
-                        <input type="password" id="github-token" placeholder="github_pat_..." />
-                        <button onclick="saveToken();">Save</button>
-                    </form>
+                    <div id="config-form-container">
+                        <form id="config-form">
+                            <fieldset>
+                                <legend>Basic</legend>
+                                <div>
+                                    <label for="github-token">Github PAT</label>
+                                    <input name="github-token" type="password" id="github-token" placeholder="github_pat_..." />
+                                </div>
+                                <div>
+                                    <label for="limit-entries">Limit entries</label>
+                                    <input name="limit-entries" type="number" min="1" id="limit-entries" placeholder="10" />
+                                </div>
+                            </fieldset>
+                            <fieldset>
+                                <legend>GitHub API</legend>
+                                <div>
+                                    <label for="github-cache-ttl">Cache TTL</label>
+                                    <input name="github-cache-ttl" type="number" min="0" id="github-cache-ttl" placeholder="60" />
+                                </div>
+                                <div>
+                                    <label for="github-page-size">Page Size</label>
+                                    <input name="github-page-size" type="number" min="1" max="100" id="github-page-size" placeholder="100" />
+                                </div>
+                                <div>
+                                    <label for="github-api-url">API URL</label>
+                                    <input name="github-api-url" type="text" id="github-api-url" />
+                                </div>
+                                <div>
+                                    <label for="github-api-version">API Version</label>
+                                    <input name="github-api-version" type="text" id="github-api-version"/>
+                                </div>
+                            </fieldset>
+                            <fieldset>
+                                <legend>Mode</legend>
+                                <label><input name="mode" type="radio" id="mode-simple" value="simple" />Simple</label>
+                                <label><input name="mode" type="radio" id="mode-full" value="full" />Full</label>
+                            </fieldset>
+                            <fieldset>
+                                <legend>GitHub - full mode</legend>
+                                <div>
+                                    <label for="github-org">GitHub Org</label>
+                                    <input name="github-org" type="text" id="github-org" placeholder="" />
+                                </div>
+                                <div>
+                                    <label for="github-user">GitHub User</label>
+                                    <input name="github-user" type="text" id="github-user" placeholder="" />
+                                </div>
+                                <div>
+                                    <label for="github-repo-filters">Repository filters</label>
+                                    <input name="github-repo-filters" type="text" id="github-repo-filters" placeholder="csv, wildcard * supported" />
+                                </div>
+                            </fieldset>
+                            <button id="save-config">Save</button>
+                            <button id="cancel-config">Cancel</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            <div class="grid-container" id="grid-container">
+                <div class="grid-item" id="cell1" ondrop="drop(event)" ondragover="allowDrop(event)">
+                </div>
+                <div class="grid-item" id="cell2" ondrop="drop(event)" ondragover="allowDrop(event)">
+                </div>
+                <div class="grid-item" id="cell3" ondrop="drop(event)" ondragover="allowDrop(event)">
+                </div>
+                <div class="grid-item" id="cell4" ondrop="drop(event)" ondragover="allowDrop(event)">
                 </div>
             </div>
         </div>
         <script type="text/template" id="template-entry">
             <li>
                 <div class="item-user-icon">
-                    <img width="32" height="32" src="${ data.user.avatar_url }" alt="${ data.user.login } avatar" />
+                    <img width="32" height="32" src="${ data.user_avatar }" alt="${ data.user_name } avatar" />
                 </div>
                 <div class="item">
                     <p class="title"><span class=number>#${ data.number }</span> <a target="_blank" class="pr" href="${ data.html_url }">${ data.title }</a></p>
-                    <p class="info">by <a target="_blank" href="${ data.user.html_url }"class=author>${ data.user.login }</a> in <a target="_blank" class=repo>  ${ data.org }/${ data.repo_name }</a></p>
+                    <p class="info">by <a target="_blank" href="${ data.user_url }"class=author>${ data.user_name }</a> in <a target="_blank" class=repo>  ${ data.org }/${ data.repo_name }</a></p>
                 </div>
                 <div class="update">${ data.updated_ago }</div>
             </li>
         </script>
         <script id="template-main" type="text/template">
-            <section id="myPrs">
+            <section draggable="true" ondragstart="drag(event)" id="myPrs">
                 <h2>My Pull Requests (${data.my.count})</h2>
                 <ul role="list">
                     ${ data.my.entries }
                 </ul>
                 ${ data.my.showAll }
             </section>
-            <section id="prsToReview">
+            <section draggable="true" ondragstart="drag(event)" id="prsToReview">
                 <h2>Pull Requests to Review (${data.review.count})</h2>
                 <ul role="list">
                     ${ data.review.entries }
                 </ul>
                 ${ data.review.showAll }
             </section>
-            <section id="prsReviewed">
+            <section draggable="true" ondragstart="drag(event)" id="prsReviewed">
                 <h2>Open Reviewed Pull Requests (${data.reviewed.count})</h2>
                 <ul role="list">
                     ${ data.reviewed.entries }
                 </ul>
                 ${ data.reviewed.showAll }
             </section>
+            <section draggable="true" ondragstart="drag(event)" id="prsPossiblyToReview">
+                <h2>Open Possibly to Review Pull Requests (${data.possiblyToReview.count})</h2>
+                <ul role="list">
+                    ${ data.possiblyToReview.entries }
+                </ul>
+                ${ data.possiblyToReview.showAll }
+            </section>
         </script>
         <script id="template-show-all" type="text/template">
-            <p class="show-all"><a onclick="showAllEntries('prsReviewed');">show all</a></p>
+            <p class="show-all"><a onclick="showAllEntries('${data.section}');">show all</a></p>
         </script>
         <script id="template-no-entries" type="text/template">
-            <p class="no-entries">No entries.</p>
+            <p class="no-entries">${ data.message || 'No entries.' }</p>
         </script>
         <footer>
             <p>by <a target="_blank" href="https://github.com/atfu-tech/gh-dashboard">gh-dashboard</a></p>

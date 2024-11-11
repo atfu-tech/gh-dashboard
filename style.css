@@ -36,7 +36,7 @@ h1 {
     text-align: center;
     letter-spacing: 1.3px;
     color: rgba(0, 0, 0, 0.5);
-    margin: 3em auto 2em auto;
+    margin: 0 auto 2em auto;
 }
 h2 { 
     margin: 1em 0;
@@ -45,31 +45,34 @@ h2 {
     border-bottom: 1px dotted rgba(0, 0, 0, 0.5);
 }
 footer { 
-    text-align: center;
-    margin: 2em 0;
     color: gray;
     font-size: 0.8em;
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    transform: rotate(90deg);
+    transform-origin: top left;
 }
 footer a { 
     text-decoration: underline;
     cursor: pointer;
 }
 div#content { 
-    width: 80%;
+    width: 90%;
     margin: 1em auto;
 }
 
-/* setup */
-div#setup { 
+/* config */
+div#config { 
     display: none;
     justify-content: center;
     align-items: center;
     height: 100vh;
 }
-div#setup > div { 
+div#config > div { 
     width: 50%;
 }
-div#setup #error { 
+div#config #error { 
     color: red;
     font-weight: bold;
     background-color: lightpink;
@@ -78,7 +81,32 @@ div#setup #error {
     display: none;
 }
 
-/* template */
+/* main */
+.grid-container {
+    display: none;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 1fr 1fr;
+    gap: 1em;
+    width: 100%;
+    height: 100vh;
+    padding: 1em;
+    box-sizing: border-box;
+}
+.grid-item {
+    border: 2px dashed rgba(0, 0, 0, 0.09);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+section { 
+    width: 98%;
+    height: 98%;
+    display: block;
+    align-items: center;
+    justify-content: center;
+    cursor: move;
+}
+
 section .title .number { 
     color: black;
 }
@@ -98,7 +126,7 @@ section li {
 section li:hover { 
     background-color: #f2f2f2;
 }
-section li:nth-child(-n+5) { 
+section li:nth-child(-n+4) { 
     display: flex;
 }
 section li p, section li div { 
@@ -139,8 +167,8 @@ section .no-entries, section .show-all {
     color: gray;
 }
 
-/* logout */
-#logout { 
+/* nav */
+nav { 
     position: absolute;
     top: 1em;
     right: 1em;
@@ -199,3 +227,25 @@ div:hover {
 .loader, .loader * { 
     will-change: transform;
 }
+.draggable:active {
+    opacity: 0.6;
+    cursor: grabbing;
+}
+
+#config-form-container { 
+    margin: 1em auto;
+}
+#config-form-container form > fieldset { 
+    /*margin: 1em 0;*/
+    display: block;
+}
+#config-form-container form > fieldset > div {
+    display: flex;
+    margin: 0.5em 0;
+}
+#config-form-container form > fieldset > div > label { 
+    flex: 1;
+}
+#config-form-container form > fieldset > div > input { 
+    flex: 2;
+}   

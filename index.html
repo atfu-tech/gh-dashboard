@@ -32,7 +32,7 @@
                     <p>To retrieve information from GitHub, this dashboard requires a Personal Access Token (PAT). You can generate one <a target=":blank" class="setup-link" href="https://github.com/settings/personal-access-tokens/new?scopes=repo,user&description=gh-dashboard">here</a> with read-only permissions for repository data.</p>
                     <p>This dashboard operates entirely on the client side, meaning your GitHub token is stored in your browser's local storage only.</p>
                     <div id="config-form-container">
-                        <form id="config-form">
+                        <form method="POST" id="config-form">
                             <fieldset>
                                 <legend>Basic</legend>
                                 <div>

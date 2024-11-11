@@ -9,6 +9,14 @@ Versioning  X.Y.Z:
  Y - non breaking features, notable bugfixes
  Z - bugfixes, small improvments
 
+## [1.3.0] - 2024-11-11
+### Changed
+- full mode: show PRs reviewed by your team members
+- configuration: all options
+- cache: cache only required properties - capacity improvement
+- panels (draggable)
+- nav
+
 ## [1.2.0] - 2024-11-08
 ### Changed
 - get rid of ejs templates - no-external-deps

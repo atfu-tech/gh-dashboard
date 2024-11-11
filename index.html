@@ -8,7 +8,11 @@
     </head>
     <body>
         <nav>
-            <label><input class="toggle" type="checkbox">brute</label>
+
+            <div class="mode-switcher">
+                <input id="full-mode" class="substituted" type="checkbox" aria-hidden="true" />
+                <label for="full-mode">Full mode</label>
+            </div>
             <button id="btn-config">Config</button>
             <button id="btn-logout">Log out</button>
         </nav>
@@ -22,7 +26,7 @@
                     <h1>gh-dashboard</h1>
                     <p id="error"></p>
                     <h2>About</h2>
-                    <p><strong>gh-dashboard</strong> is meant to be a dead-simple, client-side summary of your current GitHub work. It provides a convenient view of pull requests, including those you've created and those you're reviewing (more to come).</p>
+                    <p><strong>gh-dashboard</strong> is meant to be a dead-simple, client-side summary of your current GitHub work. It provides a convenient view of pull requests, including those you've created and those you're reviewing (including those your team members reviewed).</p>
                     <p>Any issues, ideas or anything else? <a target="_blank" href="https://github.com/atfu-tech/gh-dashboard">gh-dashboard</a> is open source!</p>
                     <h2>Configuration</h2>
                     <p>To retrieve information from GitHub, this dashboard requires a Personal Access Token (PAT). You can generate one <a target=":blank" class="setup-link" href="https://github.com/settings/personal-access-tokens/new?scopes=repo,user&description=gh-dashboard">here</a> with read-only permissions for repository data.</p>
@@ -62,7 +66,10 @@
                             <fieldset>
                                 <legend>Mode</legend>
                                 <label><input name="mode" type="radio" id="mode-simple" value="simple" />Simple</label>
-                                <label><input name="mode" type="radio" id="mode-full" value="full" />Full</label>
+                                <label><input name="mode" type="radio" id="mode-full" value="full" />Full (fetches all PRs from given org and user)</label>
+                                <div id="mode-full-info">
+                                    Full mode try to overcome GitHub UI limits and allows to show PR's reviewed by your team members - <a target="_blank" href="https://github.com/orgs/community/discussions/5289">more info GH discussion</a>
+                                </div>
                             </fieldset>
                             <fieldset>
                                 <legend>GitHub - full mode</legend>
@@ -79,20 +86,23 @@
                                     <input name="github-repo-filters" type="text" id="github-repo-filters" placeholder="csv, wildcard * supported" />
                                 </div>
                             </fieldset>
-                            <button id="save-config">Save</button>
-                            <button id="cancel-config">Cancel</button>
+                            <div id="config-buttons">
+                                <button id="save-config">Save</button>
+                                <button id="cancel-config">Cancel</button>
+                                <button id="clear-config">Clear all local stored data</button>
+                            </div>
                         </form>
                     </div>
                 </div>
             </div>
             <div class="grid-container" id="grid-container">
-                <div class="grid-item" id="cell1" ondrop="drop(event)" ondragover="allowDrop(event)">
+                <div class="grid-item" id="cell1" ondrop="DashboardUI.grid.drop(event)" ondragover="DashboardUI.grid.allowDrop(event)">
                 </div>
-                <div class="grid-item" id="cell2" ondrop="drop(event)" ondragover="allowDrop(event)">
+                <div class="grid-item" id="cell2" ondrop="DashboardUI.grid.drop(event)" ondragover="DashboardUI.grid.allowDrop(event)">
                 </div>
-                <div class="grid-item" id="cell3" ondrop="drop(event)" ondragover="allowDrop(event)">
+                <div class="grid-item" id="cell3" ondrop="DashboardUI.grid.drop(event)" ondragover="DashboardUI.grid.allowDrop(event)">
                 </div>
-                <div class="grid-item" id="cell4" ondrop="drop(event)" ondragover="allowDrop(event)">
+                <div class="grid-item" id="cell4" ondrop="DashboardUI.grid.drop(event)" ondragover="DashboardUI.grid.allowDrop(event)">
                 </div>
             </div>
         </div>
@@ -109,28 +119,28 @@
             </li>
         </script>
         <script id="template-main" type="text/template">
-            <section draggable="true" ondragstart="drag(event)" id="myPrs">
+            <section draggable="true" ondragstart="DashboardUI.grid.drag(event)" id="myPrs">
                 <h2>My Pull Requests (${data.my.count})</h2>
                 <ul role="list">
                     ${ data.my.entries }
                 </ul>
                 ${ data.my.showAll }
             </section>
-            <section draggable="true" ondragstart="drag(event)" id="prsToReview">
+            <section draggable="true" ondragstart="DashboardUI.grid.drag(event)" id="prsToReview">
                 <h2>Pull Requests to Review (${data.review.count})</h2>
                 <ul role="list">
                     ${ data.review.entries }
                 </ul>
                 ${ data.review.showAll }
             </section>
-            <section draggable="true" ondragstart="drag(event)" id="prsReviewed">
+            <section draggable="true" ondragstart="DashboardUI.grid.drag(event)" id="prsReviewed">
                 <h2>Open Reviewed Pull Requests (${data.reviewed.count})</h2>
                 <ul role="list">
                     ${ data.reviewed.entries }
                 </ul>
                 ${ data.reviewed.showAll }
             </section>
-            <section draggable="true" ondragstart="drag(event)" id="prsPossiblyToReview">
+            <section draggable="true" ondragstart="DashboardUI.grid.drag(event)" id="prsPossiblyToReview">
                 <h2>Open Possibly to Review Pull Requests (${data.possiblyToReview.count})</h2>
                 <ul role="list">
                     ${ data.possiblyToReview.entries }
@@ -139,7 +149,7 @@
             </section>
         </script>
         <script id="template-show-all" type="text/template">
-            <p class="show-all"><a onclick="showAllEntries('${data.section}');">show all</a></p>
+            <p class="show-all"><a onclick="DashboardUI.grid.showAllEntries('${data.section}');">show all</a></p>
         </script>
         <script id="template-no-entries" type="text/template">
             <p class="no-entries">${ data.message || 'No entries.' }</p>

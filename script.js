@@ -315,7 +315,7 @@ GithubAPI = {
         let filteredPrs = allPrs.filter(function (pr) {
             for (let repoFilter of repoFilters.split(',')) {
                 let regex = new RegExp(repoFilter.replace(/\*/g, '.*'));
-                if (pr.repository_url.match(regex)) {
+                if (pr.repo_name.match(regex)) {
                     return true;
                 }
             }
